@@ -13,7 +13,7 @@
 #include "MIDIFileReader.h"
 using namespace MIDIConstants;
 #include "vector.h"
-
+	
 struct noteData {
 	float beatPosition;//in beats from beginning
 	int pitch;//as MIDI note number
@@ -32,6 +32,10 @@ public:
 	
 	double updateElapsedTime(int ticksNow);
 	double ticksToMillis(int ticks);
+	
+	void printNoteData();
+	void filterMidiEvents();
+	bool filterEvent(int index);
 	
 	//newTimeSignature(int ticks, int numerator, int denominator);
 	//where we store the info

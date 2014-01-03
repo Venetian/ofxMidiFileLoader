@@ -10,6 +10,9 @@
 #include "MIDIFileLoader.h"
 
 
+const bool overrideTempo = true;//for Andrew R's use with Logic exported files
+const int repeatCutoff = 150;//msec when looking for repeated midi events (post-filtering)
+
 MIDIFileLoader:: MIDIFileLoader(){
 	printMidiInfo = true;
 }
@@ -23,7 +26,6 @@ int MIDIFileLoader::loadFile(std::string& filename){
 	lastTick = 0;
 	lastMillis = 0;
 	
-	beatPeriod = 60000000.0 / 120.0;
 	beatPeriod = 500;///guessing
 	printf("FIRST BEAT PERIOD %f\n", beatPeriod);
 	//lastMeasurePosition = 0;
@@ -110,16 +112,24 @@ int MIDIFileLoader::loadFile(std::string& filename){
 						int m2 = j->getMetaMessage()[2];
 						long tempo = (((m0 << 8) + m1) << 8) + m2;
 						//if (printMidiInfo)
-						std::cout << t << ": Tempo(period): " << 60000000.0 / double(tempo) << endl;
-						std::cout << "tempo was " << tempo << endl;
+						std::cout << "tempo data: " << tempo << endl;
+						std::cout << t << ": Tempo(BPM): " << 60000000.0 / double(tempo) << endl;
 						
+						// The 3 data bytes of tt tt tt are the tempo in microseconds per quarter note
 						
 						//Joel - this bit needs checking
-						beatPeriod = 60000000.0 / double(tempo);
-						printf("BPM??? %f\n", beatPeriod);
-						//i think it needs to be period not tempo
-						beatPeriod = 60000.0/beatPeriod;
-						printf("beat period %f\n", beatPeriod);
+						//Andrew - yes, tempo above is actually period
+						//however, from Logic when exporting at 120 BPM I get 138.101 here
+						//so needs more checking
+						
+						if (!overrideTempo){
+							beatPeriod = tempo/1000.0;
+						} else {
+							printf("WARNING! - Tempo message overriden here");
+						}
+						
+						printf("BPM %.2f\n", 60000./beatPeriod);
+					
 						
 						double tmp = updateElapsedTime(t);
 						/*
@@ -347,4 +357,36 @@ double MIDIFileLoader::updateElapsedTime(int ticksNow){
 double MIDIFileLoader::ticksToMillis(int ticks){
 	return (beatPeriod * ticks / (double) pulsesPerQuarternote);
 }
+
+
+void MIDIFileLoader::printNoteData(){
+	for (int i = 0; i < midiEvents.size(); i++){
+		printf("NOTE %i time %.0f vel %i\n", midiEvents[i].pitch, midiEvents[i].timeMillis, midiEvents[i].velocity);
+		if (filterEvent(i))
+			printf("REPEAT!\n");
+	}
+}
+
+void MIDIFileLoader::filterMidiEvents(){
+	int index = 0;
+	while (index < midiEvents.size()){
+		if (filterEvent(index))
+			midiEvents.erase(midiEvents.begin()+index);
+		else 
+			index++;
+	}
+}
+
+bool MIDIFileLoader::filterEvent(int index){
+	double cutoffTime = midiEvents[index].timeMillis - repeatCutoff;
+	bool repeatEvent = false;
+	int tmpIndex = index-1;
+	while (tmpIndex >= 0 && midiEvents[tmpIndex].timeMillis > cutoffTime){
+		if (midiEvents[tmpIndex].pitch == midiEvents[index].pitch)
+			repeatEvent = true;
+		tmpIndex--;
+	}
+	return repeatEvent;
+}
+
 

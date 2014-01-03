@@ -5,7 +5,22 @@
 
 //--------------------------------------------------------------
 void testApp::setup(){
-	midiFileName = "../../../data/entertainer.mid";
+	//midiFileName = "../../../data/entertainer.mid";
+//	midiFileName = "/Users/andrew/Music/Logic/GreenOnionsChichester/GreenOnionsChichester/Bouncing/GreenOnionsMain.mid";
+	midiFileName = "/Users/andrew/Music/Logic/GreenOnionsChichester/GreenOnionsChichester/Bouncing/main2_redone.mid";
+	loader.loadFile(midiFileName);
+	loader.printNoteData();
+	
+	
+	//loader.filterMidiEvents();
+	//loader.printNoteData();
+	
+/*
+	int test = 43*128*128;
+	printf("test %i\n", test);
+	test += 44*128;
+	printf("test %i\n", test);
+ */
 }
 
 //--------------------------------------------------------------
